@@ -1,0 +1,395 @@
+openapi: 3.1.0
+info:
+  title: Chat API
+  version: 1.0.0
+  description: OpenAPI specification for the Chat endpoints exposed by the Dashboard service.
+servers:
+  - url: /
+paths:
+  /api/chat/sessions:
+    get:
+      summary: List chat sessions
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - in: query
+          name: agentId
+          schema:
+            type: string
+          description: Optional filter to list sessions for a specific agent.
+      responses:
+        '200':
+          description: Sessions listed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionListResponse'
+        '400':
+          description: Invalid pagination parameters
+        '500':
+          description: Server error
+    post:
+      summary: Create chat session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChatSession'
+      responses:
+        '201':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '400':
+          description: Validation error
+        '500':
+          description: Server error
+    delete:
+      summary: Bulk delete all chat sessions
+      responses:
+        '200':
+          description: Bulk deletion result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkDeleteResponse'
+        '500':
+          description: Server error
+
+  /api/chat/sessions/{sessionId}:
+    parameters:
+      - in: path
+        name: sessionId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get chat session
+      responses:
+        '200':
+          description: Session retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '400':
+          description: Invalid ID format
+        '404':
+          description: Session not found
+        '500':
+          description: Server error
+    put:
+      summary: Update chat session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Session updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '400':
+          description: Validation error or invalid ID format
+        '404':
+          description: Session not found
+        '500':
+          description: Server error
+    delete:
+      summary: Delete chat session
+      responses:
+        '204':
+          description: Session deleted successfully (no content)
+        '400':
+          description: Invalid ID format
+        '404':
+          description: Session not found
+        '500':
+          description: Server error
+
+  /api/chat/messages:
+    get:
+      summary: Get messages for a session
+      parameters:
+        - in: query
+          name: sessionId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - in: query
+          name: before
+          schema:
+            type: string
+            format: date-time
+            description: Fetch messages before this timestamp.
+      responses:
+        '200':
+          description: Messages retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessagesResponse'
+        '400':
+          description: Invalid parameters
+        '500':
+          description: Server error
+    post:
+      summary: Create new chat message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChatMessage'
+      responses:
+        '201':
+          description: Message created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Validation error
+        '500':
+          description: Server error
+
+  /api/chat/stream:
+    get:
+      summary: Server-Sent Events for chat updates
+      parameters:
+        - in: query
+          name: sessionId
+          schema:
+            type: string
+            format: uuid
+          description: Optional session to scope events to.
+      responses:
+        '200':
+          description: SSE stream established
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '500':
+          description: Server error
+
+components:
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          nullable: true
+        error:
+          type: string
+          nullable: true
+        message:
+          type: string
+          nullable: true
+      additionalProperties: false
+
+    ChatSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        agentId:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        isActive:
+          type: boolean
+        messageCount:
+          type: integer
+        lastMessage:
+          type: string
+          nullable: true
+      required: [id, agentId, name, createdAt, updatedAt, isActive, messageCount]
+
+    CreateChatSession:
+      type: object
+      properties:
+        agentId:
+          type: string
+        name:
+          type: string
+          maxLength: 100
+      required: [agentId, name]
+
+    ChatMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sessionId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [user, assistant, system]
+        content:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              filename:
+                type: string
+              mimeType:
+                type: string
+              size:
+                type: integer
+              path:
+                type: string
+        metadata:
+          type: object
+          properties:
+            processingTime:
+              type: number
+            tokenCount:
+              type: number
+            modelUsed:
+              type: string
+      required: [id, sessionId, role, content, timestamp]
+
+    CreateChatMessage:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [user, assistant, system]
+        content:
+          type: string
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              filename:
+                type: string
+              mimeType:
+                type: string
+              size:
+                type: integer
+              path:
+                type: string
+      required: [sessionId, role, content]
+
+    MessagesPayload:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+        hasMore:
+          type: boolean
+      required: [messages, hasMore]
+
+    MessageResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ChatMessage'
+
+    MessagesResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/MessagesPayload'
+
+    SessionResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ChatSession'
+
+    SessionList:
+      type: object
+      properties:
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatSession'
+        total:
+          type: integer
+        hasMore:
+          type: boolean
+      required: [sessions, total, hasMore]
+
+    SessionListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/SessionList'
+
+    BulkDeleteResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                deletedCount:
+                  type: integer
+                message:
+                  type: string
+              required: [deletedCount, message]

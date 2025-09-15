@@ -1,0 +1,363 @@
+openapi: 3.1.0
+info:
+  title: Agents API
+  version: 1.0.0
+  description: OpenAPI specification for the Agents endpoints exposed by the Dashboard service.
+servers:
+  - url: /
+paths:
+  /api/agents:
+    get:
+      summary: List agents
+      description: Returns a list of agents with optional status filter and limit.
+      parameters:
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/AgentStatus'
+          description: Optional status filter.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+          description: Maximum number of agents to return.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentsListResponse'
+        '400':
+          description: Invalid parameters
+        '500':
+          description: Server error
+    post:
+      summary: Register new agent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAgent'
+      responses:
+        '201':
+          description: Agent created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentResponse'
+        '400':
+          description: Validation error
+        '500':
+          description: Server error
+
+  /api/agents/{agentId}:
+    parameters:
+      - in: path
+        name: agentId
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Agent identifier.
+    get:
+      summary: Get agent by ID
+      responses:
+        '200':
+          description: Agent retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentResponse'
+        '400':
+          description: Invalid ID format
+        '404':
+          description: Agent not found
+        '500':
+          description: Server error
+    put:
+      summary: Update agent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAgent'
+      responses:
+        '200':
+          description: Agent updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentResponse'
+        '400':
+          description: Validation error or invalid ID format
+        '404':
+          description: Agent not found
+        '500':
+          description: Server error
+    delete:
+      summary: Delete agent
+      responses:
+        '204':
+          description: Agent deleted successfully (no content)
+        '400':
+          description: Invalid ID format
+        '404':
+          description: Agent not found
+        '500':
+          description: Server error
+
+  /api/agents/system-metrics:
+    get:
+      summary: Get system-wide metrics
+      responses:
+        '200':
+          description: Metrics retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemMetricsResponse'
+        '500':
+          description: Server error
+
+components:
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          nullable: true
+        error:
+          type: string
+          nullable: true
+        message:
+          type: string
+          nullable: true
+      additionalProperties: false
+
+    AgentStatus:
+      type: string
+      enum: [online, offline, error, maintenance]
+
+    PermissionLevel:
+      type: string
+      enum: [none, read, write, admin]
+
+    AgentPermissions:
+      type: object
+      properties:
+        memoryAccess:
+          $ref: '#/components/schemas/PermissionLevel'
+        toolAccess:
+          type: array
+          items:
+            type: string
+        rateLimitRpm:
+          type: integer
+        maxMemorySize:
+          type: integer
+      required: [memoryAccess, toolAccess, rateLimitRpm, maxMemorySize]
+
+    AgentConfig:
+      type: object
+      properties:
+        model:
+          type: string
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 1
+        maxTokens:
+          type: integer
+          minimum: 1
+          maximum: 100000
+        systemPrompt:
+          type: string
+          nullable: true
+      required: [model, temperature, maxTokens]
+
+    AgentMetrics:
+      type: object
+      properties:
+        totalRequests:
+          type: integer
+        averageResponseTime:
+          type: number
+        errorRate:
+          type: number
+          minimum: 0
+          maximum: 1
+        uptime:
+          type: number
+      required: [totalRequests, averageResponseTime, errorRate, uptime]
+
+    Agent:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/AgentStatus'
+        permissions:
+          $ref: '#/components/schemas/AgentPermissions'
+        configuration:
+          $ref: '#/components/schemas/AgentConfig'
+        metrics:
+          $ref: '#/components/schemas/AgentMetrics'
+        lastSeen:
+          type: string
+          format: date-time
+          nullable: true
+      required: [id, name, description, status, permissions, configuration, metrics]
+
+    CreateAgent:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        configuration:
+          $ref: '#/components/schemas/AgentConfig'
+        permissions:
+          $ref: '#/components/schemas/AgentPermissions'
+      required: [name, description, configuration]
+
+    UpdateAgent:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        status:
+          $ref: '#/components/schemas/AgentStatus'
+        configuration:
+          $ref: '#/components/schemas/AgentConfig'
+        permissions:
+          $ref: '#/components/schemas/AgentPermissions'
+      additionalProperties: false
+
+    SystemMetrics:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        agents:
+          type: object
+          properties:
+            total:
+              type: integer
+            online:
+              type: integer
+            offline:
+              type: integer
+            error:
+              type: integer
+          required: [total, online, offline, error]
+        memory:
+          type: object
+          properties:
+            totalEntries:
+              type: integer
+            totalSize:
+              type: integer
+            averageAccessTime:
+              type: number
+            topCategories:
+              type: array
+              items:
+                type: object
+                properties:
+                  category:
+                    type: string
+                  count:
+                    type: integer
+                required: [category, count]
+          required: [totalEntries, totalSize, averageAccessTime, topCategories]
+        mcp:
+          type: object
+          properties:
+            activeTools:
+              type: integer
+            totalExecutions:
+              type: integer
+            averageExecutionTime:
+              type: number
+            errorRate:
+              type: number
+          required: [activeTools, totalExecutions, averageExecutionTime, errorRate]
+        system:
+          type: object
+          properties:
+            uptime:
+              type: number
+            memoryUsage:
+              type: number
+            diskUsage:
+              type: number
+          required: [uptime, memoryUsage, diskUsage]
+      required: [timestamp, agents, memory, mcp, system]
+
+    AgentResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Agent'
+
+    AgentsList:
+      type: object
+      properties:
+        agents:
+          type: array
+          items:
+            $ref: '#/components/schemas/Agent'
+        total:
+          type: integer
+        statusCounts:
+          type: object
+          properties:
+            online:
+              type: integer
+            offline:
+              type: integer
+            error:
+              type: integer
+            maintenance:
+              type: integer
+          required: [online, offline, error, maintenance]
+      required: [agents, total, statusCounts]
+
+    AgentsListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AgentsList'
+
+    SystemMetricsResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/SystemMetrics'
