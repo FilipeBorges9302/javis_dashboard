@@ -1,0 +1,444 @@
+openapi: 3.0.3
+info:
+  title: Agents API
+  version: 1.0.0
+  description: API for managing AI agents and their configurations
+
+paths:
+  /api/agents:
+    get:
+      summary: List all agents
+      tags: [Agents]
+      parameters:
+        - name: status
+          in: query
+          description: Filter by agent status
+          schema:
+            type: string
+            enum: [online, offline, error, maintenance]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+      responses:
+        '200':
+          description: List of agents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Agent'
+                  total:
+                    type: integer
+                  statusCounts:
+                    type: object
+                    properties:
+                      online:
+                        type: integer
+                      offline:
+                        type: integer
+                      error:
+                        type: integer
+                      maintenance:
+                        type: integer
+
+    post:
+      summary: Register new agent
+      tags: [Agents]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, description, configuration]
+              properties:
+                name:
+                  type: string
+                  maxLength: 100
+                description:
+                  type: string
+                  maxLength: 500
+                configuration:
+                  $ref: '#/components/schemas/AgentConfig'
+                permissions:
+                  $ref: '#/components/schemas/AgentPermissions'
+      responses:
+        '201':
+          description: Agent registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '400':
+          description: Invalid agent configuration
+
+  /api/agents/{agentId}:
+    get:
+      summary: Get specific agent
+      tags: [Agents]
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '404':
+          description: Agent not found
+
+    put:
+      summary: Update agent configuration
+      tags: [Agents]
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 100
+                description:
+                  type: string
+                  maxLength: 500
+                status:
+                  type: string
+                  enum: [online, offline, error, maintenance]
+                configuration:
+                  $ref: '#/components/schemas/AgentConfig'
+                permissions:
+                  $ref: '#/components/schemas/AgentPermissions'
+      responses:
+        '200':
+          description: Agent updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        '404':
+          description: Agent not found
+
+    delete:
+      summary: Unregister agent
+      tags: [Agents]
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Agent unregistered
+        '404':
+          description: Agent not found
+
+  /api/agents/{agentId}/metrics:
+    get:
+      summary: Get agent performance metrics
+      tags: [Agent Metrics]
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: period
+          in: query
+          description: Metrics time period
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+            default: day
+      responses:
+        '200':
+          description: Agent metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  current:
+                    $ref: '#/components/schemas/AgentMetrics'
+                  historical:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        timestamp:
+                          type: string
+                          format: date-time
+                        metrics:
+                          $ref: '#/components/schemas/AgentMetrics'
+
+  /api/agents/{agentId}/logs:
+    get:
+      summary: Get agent activity logs
+      tags: [Agent Logs]
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 500
+        - name: since
+          in: query
+          description: Get logs since this timestamp
+          schema:
+            type: string
+            format: date-time
+        - name: operation
+          in: query
+          description: Filter by operation type
+          schema:
+            type: string
+            enum: [read, write, delete, search, execute]
+      responses:
+        '200':
+          description: Agent activity logs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AccessLog'
+                  total:
+                    type: integer
+                  hasMore:
+                    type: boolean
+
+  /api/agents/system-metrics:
+    get:
+      summary: Get system-wide agent metrics
+      tags: [System Metrics]
+      responses:
+        '200':
+          description: System metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemMetrics'
+
+components:
+  schemas:
+    Agent:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        status:
+          type: string
+          enum: [online, offline, error, maintenance]
+        permissions:
+          $ref: '#/components/schemas/AgentPermissions'
+        configuration:
+          $ref: '#/components/schemas/AgentConfig'
+        metrics:
+          $ref: '#/components/schemas/AgentMetrics'
+        lastSeen:
+          type: string
+          format: date-time
+      required: [id, name, description, status, permissions, configuration, metrics]
+
+    AgentPermissions:
+      type: object
+      properties:
+        memoryAccess:
+          type: string
+          enum: [none, read, write, admin]
+        toolAccess:
+          type: array
+          items:
+            type: string
+          description: Array of allowed tool IDs
+        rateLimitRpm:
+          type: integer
+          description: Requests per minute
+          minimum: 1
+          maximum: 10000
+        maxMemorySize:
+          type: integer
+          description: Memory usage limit in MB
+          minimum: 1
+          maximum: 10000
+      required: [memoryAccess, toolAccess, rateLimitRpm, maxMemorySize]
+
+    AgentConfig:
+      type: object
+      properties:
+        model:
+          type: string
+          description: AI model identifier
+        temperature:
+          type: number
+          description: Creativity setting (0-1)
+          minimum: 0
+          maximum: 1
+        maxTokens:
+          type: integer
+          description: Response length limit
+          minimum: 1
+          maximum: 100000
+        systemPrompt:
+          type: string
+          description: Base instructions
+          maxLength: 10000
+      required: [model, temperature, maxTokens]
+
+    AgentMetrics:
+      type: object
+      properties:
+        totalRequests:
+          type: integer
+          minimum: 0
+        averageResponseTime:
+          type: number
+          description: In milliseconds
+          minimum: 0
+        errorRate:
+          type: number
+          description: 0-1 percentage
+          minimum: 0
+          maximum: 1
+        uptime:
+          type: number
+          description: Percentage uptime
+          minimum: 0
+          maximum: 100
+      required: [totalRequests, averageResponseTime, errorRate, uptime]
+
+    AccessLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        agentId:
+          type: string
+        operation:
+          type: string
+          enum: [read, write, delete, search, execute]
+        resource:
+          type: string
+          description: What was accessed
+        resourceId:
+          type: string
+          description: Specific item ID
+        responseTime:
+          type: number
+          description: Operation duration in milliseconds
+        status:
+          type: string
+          enum: [success, error, timeout, denied]
+        details:
+          type: object
+          properties:
+            query:
+              type: string
+            resultCount:
+              type: integer
+            errorMessage:
+              type: string
+            metadata:
+              type: object
+      required: [id, timestamp, agentId, operation, resource, responseTime, status]
+
+    SystemMetrics:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        agents:
+          type: object
+          properties:
+            total:
+              type: integer
+            online:
+              type: integer
+            offline:
+              type: integer
+            error:
+              type: integer
+        memory:
+          type: object
+          properties:
+            totalEntries:
+              type: integer
+            totalSize:
+              type: integer
+              description: In bytes
+            averageAccessTime:
+              type: number
+              description: In milliseconds
+            topCategories:
+              type: array
+              items:
+                type: object
+                properties:
+                  category:
+                    type: string
+                  count:
+                    type: integer
+        mcp:
+          type: object
+          properties:
+            activeTools:
+              type: integer
+            totalExecutions:
+              type: integer
+            averageExecutionTime:
+              type: number
+            errorRate:
+              type: number
+        system:
+          type: object
+          properties:
+            uptime:
+              type: number
+              description: In milliseconds
+            memoryUsage:
+              type: number
+              description: In MB
+            diskUsage:
+              type: number
+              description: In MB
+      required: [timestamp, agents, memory, mcp, system]

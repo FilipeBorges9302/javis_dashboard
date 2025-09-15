@@ -1,0 +1,199 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Chat Session Deletion API",
+    "version": "1.0.0",
+    "description": "API contracts for individual and bulk chat session deletion"
+  },
+  "paths": {
+    "/api/chat/sessions/{sessionId}": {
+      "delete": {
+        "summary": "Delete individual chat session",
+        "description": "Permanently delete a single chat session and all associated messages",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "description": "UUID of the session to delete",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "123e4567-e89b-12d3-a456-426614174000"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Session deleted successfully"
+                    }
+                  },
+                  "required": ["success"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "type": "string",
+                      "example": "Session not found"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "SESSION_NOT_FOUND"
+                    }
+                  },
+                  "required": ["success", "error"]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "type": "string",
+                      "example": "Failed to delete session"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "DELETION_FAILED"
+                    }
+                  },
+                  "required": ["success", "error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat/sessions": {
+      "delete": {
+        "summary": "Delete all chat sessions (bulk delete)",
+        "description": "Permanently delete all chat sessions and associated messages for the user",
+        "responses": {
+          "200": {
+            "description": "All sessions deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "deletedCount": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "example": 5,
+                      "description": "Number of sessions that were deleted"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "All 5 sessions deleted successfully"
+                    }
+                  },
+                  "required": ["success", "deletedCount"]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error during bulk deletion",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "type": "string",
+                      "example": "Failed to delete all sessions"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "BULK_DELETION_FAILED"
+                    },
+                    "partialSuccess": {
+                      "type": "boolean",
+                      "example": true,
+                      "description": "True if some sessions were deleted before the error occurred"
+                    },
+                    "deletedCount": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "example": 3,
+                      "description": "Number of sessions successfully deleted before error"
+                    }
+                  },
+                  "required": ["success", "error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Indicates if the operation was successful"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable message describing the result"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if operation failed"
+          },
+          "code": {
+            "type": "string",
+            "description": "Machine-readable error code"
+          }
+        },
+        "required": ["success"]
+      }
+    }
+  }
+}

@@ -1,0 +1,65 @@
+[
+  {
+    "id": "mem-001",
+    "type": "fact",
+    "content": "The user prefers concise responses and dislikes overly verbose explanations. They work in software development and are particularly interested in TypeScript and React.",
+    "tags": ["user-preference", "development", "typescript", "react"],
+    "category": "personal/preferences",
+    "createdAt": "2025-09-14T10:30:00.000Z",
+    "updatedAt": "2025-09-14T10:30:00.000Z",
+    "accessCount": 15,
+    "lastAccessed": "2025-09-14T20:15:30.000Z",
+    "source": "session-001",
+    "priority": 4
+  },
+  {
+    "id": "mem-002",
+    "type": "context",
+    "content": "Current project involves building an AI dashboard with Next.js. The dashboard should be simple, no authentication required, and focused on local development use.",
+    "tags": ["project", "dashboard", "nextjs", "local-dev"],
+    "category": "work/current-project",
+    "createdAt": "2025-09-14T11:45:00.000Z",
+    "updatedAt": "2025-09-14T16:20:00.000Z",
+    "accessCount": 8,
+    "lastAccessed": "2025-09-14T19:45:00.000Z",
+    "source": "session-002",
+    "priority": 5
+  },
+  {
+    "id": "mem-003",
+    "type": "instruction",
+    "content": "When providing code examples, always include proper TypeScript typing and follow modern React patterns with hooks. Prefer functional components over class components.",
+    "tags": ["coding-style", "typescript", "react", "best-practices"],
+    "category": "development/guidelines",
+    "createdAt": "2025-09-14T09:15:00.000Z",
+    "updatedAt": "2025-09-14T09:15:00.000Z",
+    "accessCount": 23,
+    "lastAccessed": "2025-09-14T20:30:45.000Z",
+    "priority": 4
+  },
+  {
+    "id": "mem-004",
+    "type": "preference",
+    "content": "Uses VS Code as primary editor with specific extensions: Prettier, ESLint, Tailwind CSS IntelliSense, and GitHub Copilot.",
+    "tags": ["tools", "vscode", "extensions", "development-environment"],
+    "category": "personal/tools",
+    "createdAt": "2025-09-13T14:20:00.000Z",
+    "updatedAt": "2025-09-13T14:20:00.000Z",
+    "accessCount": 3,
+    "lastAccessed": "2025-09-14T12:10:00.000Z",
+    "priority": 2
+  },
+  {
+    "id": "mem-005",
+    "type": "conversation",
+    "content": "Discussed implementation of file-based storage for the dashboard. User decided against using a database to keep the setup simple and suitable for local development.",
+    "tags": ["storage", "database", "file-system", "architecture-decision"],
+    "category": "work/architecture",
+    "createdAt": "2025-09-14T13:30:00.000Z",
+    "updatedAt": "2025-09-14T13:30:00.000Z",
+    "accessCount": 5,
+    "lastAccessed": "2025-09-14T17:45:30.000Z",
+    "source": "session-003",
+    "priority": 3
+  }
+]

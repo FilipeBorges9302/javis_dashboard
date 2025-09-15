@@ -1,0 +1,135 @@
+[
+  {
+    "id": "tool-001",
+    "name": "Web Search",
+    "description": "Search the web for current information and facts",
+    "category": "information",
+    "parameters": [
+      {
+        "name": "query",
+        "type": "string",
+        "required": true,
+        "description": "Search query string"
+      },
+      {
+        "name": "limit",
+        "type": "number",
+        "required": false,
+        "description": "Maximum number of results",
+        "defaultValue": 10
+      }
+    ],
+    "permissions": ["web-access"],
+    "isActive": true,
+    "usageStats": {
+      "totalExecutions": 156,
+      "successRate": 0.94,
+      "averageExecutionTime": 2340
+    },
+    "lastUsed": "2025-09-14T20:15:30.000Z"
+  },
+  {
+    "id": "tool-002",
+    "name": "Code Analyzer",
+    "description": "Analyze code for bugs, performance issues, and best practices",
+    "category": "development",
+    "parameters": [
+      {
+        "name": "code",
+        "type": "string",
+        "required": true,
+        "description": "Code to analyze"
+      },
+      {
+        "name": "language",
+        "type": "string",
+        "required": true,
+        "description": "Programming language"
+      },
+      {
+        "name": "checkTypes",
+        "type": "array",
+        "required": false,
+        "description": "Types of checks to perform",
+        "defaultValue": ["bugs", "performance", "style"]
+      }
+    ],
+    "permissions": ["code-analysis"],
+    "isActive": true,
+    "usageStats": {
+      "totalExecutions": 89,
+      "successRate": 0.98,
+      "averageExecutionTime": 1890
+    },
+    "lastUsed": "2025-09-14T19:45:15.000Z"
+  },
+  {
+    "id": "tool-003",
+    "name": "Data Visualizer",
+    "description": "Create charts and graphs from data",
+    "category": "visualization",
+    "parameters": [
+      {
+        "name": "data",
+        "type": "array",
+        "required": true,
+        "description": "Data points to visualize"
+      },
+      {
+        "name": "chartType",
+        "type": "string",
+        "required": true,
+        "description": "Type of chart (bar, line, pie, etc.)"
+      },
+      {
+        "name": "options",
+        "type": "object",
+        "required": false,
+        "description": "Chart configuration options",
+        "defaultValue": {}
+      }
+    ],
+    "permissions": ["data-access", "chart-generation"],
+    "isActive": false,
+    "usageStats": {
+      "totalExecutions": 23,
+      "successRate": 0.87,
+      "averageExecutionTime": 3200
+    },
+    "lastUsed": "2025-09-14T15:20:00.000Z"
+  },
+  {
+    "id": "tool-004",
+    "name": "File Manager",
+    "description": "Manage files and directories in the project",
+    "category": "system",
+    "parameters": [
+      {
+        "name": "action",
+        "type": "string",
+        "required": true,
+        "description": "Action to perform (read, write, delete, list)"
+      },
+      {
+        "name": "path",
+        "type": "string",
+        "required": true,
+        "description": "File or directory path"
+      },
+      {
+        "name": "content",
+        "type": "string",
+        "required": false,
+        "description": "Content for write operations"
+      }
+    ],
+    "permissions": ["file-system"],
+    "isActive": true,
+    "usageStats": {
+      "totalExecutions": 67,
+      "successRate": 0.91,
+      "averageExecutionTime": 450
+    },
+    "lastUsed": "2025-09-14T18:30:45.000Z"
+  }
+]

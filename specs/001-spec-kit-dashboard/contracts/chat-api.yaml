@@ -1,0 +1,299 @@
+openapi: 3.0.3
+info:
+  title: Chat API
+  version: 1.0.0
+  description: API for managing chat sessions and messages with AI agents
+
+paths:
+  /api/chat/sessions:
+    get:
+      summary: List all chat sessions
+      tags: [Chat Sessions]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: agentId
+          in: query
+          description: Filter by specific agent
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of chat sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ChatSession'
+                  total:
+                    type: integer
+                  hasMore:
+                    type: boolean
+
+    post:
+      summary: Create new chat session
+      tags: [Chat Sessions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agentId, name]
+              properties:
+                agentId:
+                  type: string
+                name:
+                  type: string
+                  maxLength: 100
+      responses:
+        '201':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatSession'
+        '400':
+          description: Invalid request data
+        '404':
+          description: Agent not found
+
+  /api/chat/sessions/{sessionId}:
+    get:
+      summary: Get specific chat session
+      tags: [Chat Sessions]
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Chat session details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatSession'
+        '404':
+          description: Session not found
+
+    put:
+      summary: Update chat session
+      tags: [Chat Sessions]
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 100
+                isActive:
+                  type: boolean
+      responses:
+        '200':
+          description: Session updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatSession'
+
+    delete:
+      summary: Delete chat session
+      tags: [Chat Sessions]
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Session deleted
+        '404':
+          description: Session not found
+
+  /api/chat/messages:
+    get:
+      summary: Get messages for a session
+      tags: [Chat Messages]
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - name: before
+          in: query
+          description: Get messages before this timestamp
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: List of chat messages
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ChatMessage'
+                  hasMore:
+                    type: boolean
+
+    post:
+      summary: Send new message
+      tags: [Chat Messages]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sessionId, role, content]
+              properties:
+                sessionId:
+                  type: string
+                role:
+                  type: string
+                  enum: [user, assistant, system]
+                content:
+                  type: string
+                  maxLength: 50000
+                attachments:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/FileAttachment'
+      responses:
+        '201':
+          description: Message created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessage'
+
+  /api/chat/stream:
+    get:
+      summary: Real-time chat events (Server-Sent Events)
+      tags: [Chat Events]
+      parameters:
+        - name: sessionId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+components:
+  schemas:
+    ChatSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        agentId:
+          type: string
+        name:
+          type: string
+          maxLength: 100
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        isActive:
+          type: boolean
+        messageCount:
+          type: integer
+          minimum: 0
+        lastMessage:
+          type: string
+      required: [id, agentId, name, createdAt, updatedAt, isActive, messageCount]
+
+    ChatMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sessionId:
+          type: string
+        role:
+          type: string
+          enum: [user, assistant, system]
+        content:
+          type: string
+          maxLength: 50000
+        timestamp:
+          type: string
+          format: date-time
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileAttachment'
+        metadata:
+          $ref: '#/components/schemas/MessageMetadata'
+      required: [id, sessionId, role, content, timestamp]
+
+    FileAttachment:
+      type: object
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        mimeType:
+          type: string
+        size:
+          type: integer
+        path:
+          type: string
+      required: [id, filename, mimeType, size, path]
+
+    MessageMetadata:
+      type: object
+      properties:
+        processingTime:
+          type: number
+        tokenCount:
+          type: integer
+        modelUsed:
+          type: string

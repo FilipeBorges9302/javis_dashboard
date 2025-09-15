@@ -1,0 +1,457 @@
+openapi: 3.0.3
+info:
+  title: MCP (Model Context Protocol) API
+  version: 1.0.0
+  description: API for managing MCP tools and execution monitoring
+
+paths:
+  /api/mcp/tools:
+    get:
+      summary: List available MCP tools
+      tags: [MCP Tools]
+      parameters:
+        - name: category
+          in: query
+          description: Filter by tool category
+          schema:
+            type: string
+        - name: isActive
+          in: query
+          description: Filter by active status
+          schema:
+            type: boolean
+            default: true
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+      responses:
+        '200':
+          description: List of MCP tools
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tools:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MCPTool'
+                  total:
+                    type: integer
+                  categories:
+                    type: array
+                    items:
+                      type: string
+
+    post:
+      summary: Register new MCP tool
+      tags: [MCP Tools]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, description, category, parameters]
+              properties:
+                name:
+                  type: string
+                  maxLength: 100
+                description:
+                  type: string
+                  maxLength: 500
+                category:
+                  type: string
+                parameters:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ToolParameter'
+                permissions:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Tool registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MCPTool'
+        '400':
+          description: Invalid tool specification
+
+  /api/mcp/tools/{toolId}:
+    get:
+      summary: Get specific MCP tool
+      tags: [MCP Tools]
+      parameters:
+        - name: toolId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tool details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MCPTool'
+        '404':
+          description: Tool not found
+
+    put:
+      summary: Update MCP tool
+      tags: [MCP Tools]
+      parameters:
+        - name: toolId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description:
+                  type: string
+                  maxLength: 500
+                isActive:
+                  type: boolean
+                permissions:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Tool updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MCPTool'
+
+    delete:
+      summary: Unregister MCP tool
+      tags: [MCP Tools]
+      parameters:
+        - name: toolId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Tool unregistered
+        '404':
+          description: Tool not found
+
+  /api/mcp/execute:
+    post:
+      summary: Execute MCP tool
+      tags: [MCP Execution]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [toolId, agentId, parameters]
+              properties:
+                toolId:
+                  type: string
+                agentId:
+                  type: string
+                parameters:
+                  type: object
+                  description: Tool-specific parameters
+                timeout:
+                  type: integer
+                  description: Execution timeout in seconds
+                  default: 30
+                  maximum: 300
+      responses:
+        '200':
+          description: Tool executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MCPExecutionResult'
+        '400':
+          description: Invalid parameters
+        '403':
+          description: Permission denied
+        '408':
+          description: Execution timeout
+        '500':
+          description: Tool execution failed
+
+  /api/mcp/executions:
+    get:
+      summary: List tool execution history
+      tags: [MCP Execution]
+      parameters:
+        - name: toolId
+          in: query
+          description: Filter by tool ID
+          schema:
+            type: string
+        - name: agentId
+          in: query
+          description: Filter by agent ID
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter by execution status
+          schema:
+            type: string
+            enum: [success, error, timeout, denied]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - name: since
+          in: query
+          description: Get executions since this timestamp
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Execution history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  executions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MCPExecutionRecord'
+                  total:
+                    type: integer
+                  hasMore:
+                    type: boolean
+
+  /api/mcp/stream:
+    get:
+      summary: Real-time MCP execution events (Server-Sent Events)
+      tags: [MCP Events]
+      parameters:
+        - name: toolId
+          in: query
+          description: Filter events for specific tool
+          schema:
+            type: string
+        - name: agentId
+          in: query
+          description: Filter events for specific agent
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/mcp/stats:
+    get:
+      summary: Get MCP usage statistics
+      tags: [MCP Stats]
+      parameters:
+        - name: period
+          in: query
+          description: Statistics period
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+            default: day
+        - name: toolId
+          in: query
+          description: Stats for specific tool
+          schema:
+            type: string
+      responses:
+        '200':
+          description: MCP statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalExecutions:
+                    type: integer
+                  successRate:
+                    type: number
+                  averageExecutionTime:
+                    type: number
+                  errorBreakdown:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  topTools:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        toolId:
+                          type: string
+                        toolName:
+                          type: string
+                        executions:
+                          type: integer
+                  topAgents:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        agentId:
+                          type: string
+                        agentName:
+                          type: string
+                        executions:
+                          type: integer
+
+components:
+  schemas:
+    MCPTool:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        category:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolParameter'
+        permissions:
+          type: array
+          items:
+            type: string
+        isActive:
+          type: boolean
+        usageStats:
+          $ref: '#/components/schemas/ToolUsageStats'
+        lastUsed:
+          type: string
+          format: date-time
+      required: [id, name, description, category, parameters, isActive]
+
+    ToolParameter:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [string, number, boolean, array, object]
+        required:
+          type: boolean
+        description:
+          type: string
+        defaultValue:
+          oneOf:
+            - type: string
+            - type: number
+            - type: boolean
+            - type: array
+            - type: object
+        validation:
+          $ref: '#/components/schemas/ParameterValidation'
+      required: [name, type, required, description]
+
+    ParameterValidation:
+      type: object
+      properties:
+        minLength:
+          type: integer
+        maxLength:
+          type: integer
+        pattern:
+          type: string
+        min:
+          type: number
+        max:
+          type: number
+
+    ToolUsageStats:
+      type: object
+      properties:
+        totalExecutions:
+          type: integer
+          minimum: 0
+        successRate:
+          type: number
+          minimum: 0
+          maximum: 1
+        averageExecutionTime:
+          type: number
+          description: Average execution time in milliseconds
+      required: [totalExecutions, successRate, averageExecutionTime]
+
+    MCPExecutionResult:
+      type: object
+      properties:
+        executionId:
+          type: string
+        status:
+          type: string
+          enum: [success, error, timeout, denied]
+        result:
+          type: object
+          description: Tool-specific result data
+        executionTime:
+          type: number
+          description: Execution time in milliseconds
+        timestamp:
+          type: string
+          format: date-time
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+      required: [executionId, status, executionTime, timestamp]
+
+    MCPExecutionRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        toolId:
+          type: string
+        toolName:
+          type: string
+        agentId:
+          type: string
+        agentName:
+          type: string
+        parameters:
+          type: object
+        result:
+          $ref: '#/components/schemas/MCPExecutionResult'
+        timestamp:
+          type: string
+          format: date-time
+      required: [id, toolId, toolName, agentId, agentName, result, timestamp]

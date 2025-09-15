@@ -1,0 +1,358 @@
+openapi: 3.0.3
+info:
+  title: Memory API
+  version: 1.0.0
+  description: API for managing AI memory entries and search
+
+paths:
+  /api/memory/entries:
+    get:
+      summary: List memory entries
+      tags: [Memory Entries]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: category
+          in: query
+          description: Filter by category
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: Filter by memory type
+          schema:
+            type: string
+            enum: [fact, preference, context, instruction, conversation]
+        - name: tags
+          in: query
+          description: Comma-separated list of tags
+          schema:
+            type: string
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [createdAt, updatedAt, accessCount, priority]
+            default: updatedAt
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: List of memory entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MemoryEntry'
+                  total:
+                    type: integer
+                  hasMore:
+                    type: boolean
+                  categories:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CategoryCount'
+
+    post:
+      summary: Create new memory entry
+      tags: [Memory Entries]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, content, category]
+              properties:
+                type:
+                  type: string
+                  enum: [fact, preference, context, instruction, conversation]
+                content:
+                  type: string
+                  maxLength: 10000
+                tags:
+                  type: array
+                  items:
+                    type: string
+                    maxLength: 50
+                  maxItems: 20
+                category:
+                  type: string
+                priority:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                  default: 3
+                source:
+                  type: string
+      responses:
+        '201':
+          description: Memory entry created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryEntry'
+        '400':
+          description: Invalid request data
+
+  /api/memory/entries/{entryId}:
+    get:
+      summary: Get specific memory entry
+      tags: [Memory Entries]
+      parameters:
+        - name: entryId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Memory entry details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryEntry'
+        '404':
+          description: Entry not found
+
+    put:
+      summary: Update memory entry
+      tags: [Memory Entries]
+      parameters:
+        - name: entryId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  maxLength: 10000
+                tags:
+                  type: array
+                  items:
+                    type: string
+                    maxLength: 50
+                  maxItems: 20
+                category:
+                  type: string
+                priority:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+      responses:
+        '200':
+          description: Memory entry updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryEntry'
+        '404':
+          description: Entry not found
+
+    delete:
+      summary: Delete memory entry
+      tags: [Memory Entries]
+      parameters:
+        - name: entryId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Entry deleted
+        '404':
+          description: Entry not found
+
+  /api/memory/search:
+    get:
+      summary: Search memory entries
+      tags: [Memory Search]
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description: Search query string
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 500
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: category
+          in: query
+          description: Limit search to specific category
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: Limit search to specific type
+          schema:
+            type: string
+            enum: [fact, preference, context, instruction, conversation]
+        - name: minPriority
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SearchResult'
+                  total:
+                    type: integer
+                  query:
+                    type: string
+                  searchTime:
+                    type: number
+                    description: Search execution time in milliseconds
+
+  /api/memory/stats:
+    get:
+      summary: Get memory statistics
+      tags: [Memory Stats]
+      responses:
+        '200':
+          description: Memory statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalEntries:
+                    type: integer
+                  totalSize:
+                    type: integer
+                    description: Total content size in bytes
+                  categoryBreakdown:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CategoryCount'
+                  typeBreakdown:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                        count:
+                          type: integer
+                  topTags:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tag:
+                          type: string
+                        count:
+                          type: integer
+                  averageAccessCount:
+                    type: number
+
+components:
+  schemas:
+    MemoryEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [fact, preference, context, instruction, conversation]
+        content:
+          type: string
+          maxLength: 10000
+        tags:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+          maxItems: 20
+        category:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        accessCount:
+          type: integer
+          minimum: 0
+        lastAccessed:
+          type: string
+          format: date-time
+        source:
+          type: string
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 5
+      required: [id, type, content, category, createdAt, updatedAt, accessCount, priority]
+
+    SearchResult:
+      type: object
+      properties:
+        entry:
+          $ref: '#/components/schemas/MemoryEntry'
+        score:
+          type: number
+          description: Relevance score (0-1)
+        matches:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              snippet:
+                type: string
+                description: Highlighted text snippet
+      required: [entry, score]
+
+    CategoryCount:
+      type: object
+      properties:
+        category:
+          type: string
+        count:
+          type: integer
+      required: [category, count]

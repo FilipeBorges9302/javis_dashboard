@@ -1,0 +1,77 @@
+[
+  {
+    "id": "agent-001",
+    "name": "Research Assistant",
+    "description": "AI agent specialized in research and information gathering",
+    "status": "online",
+    "permissions": {
+      "memoryAccess": "write",
+      "toolAccess": ["search", "summarize", "analyze"],
+      "rateLimitRpm": 120,
+      "maxMemorySize": 500
+    },
+    "configuration": {
+      "model": "gpt-4-turbo",
+      "temperature": 0.3,
+      "maxTokens": 4000,
+      "systemPrompt": "You are a research assistant focused on providing accurate and comprehensive information."
+    },
+    "metrics": {
+      "totalRequests": 1247,
+      "averageResponseTime": 2340,
+      "errorRate": 0.02,
+      "uptime": 98.7
+    },
+    "lastSeen": "2025-09-14T20:45:00.000Z"
+  },
+  {
+    "id": "agent-002",
+    "name": "Code Assistant",
+    "description": "AI agent for code analysis and programming help",
+    "status": "online",
+    "permissions": {
+      "memoryAccess": "read",
+      "toolAccess": ["code-analyze", "debug", "test"],
+      "rateLimitRpm": 90,
+      "maxMemorySize": 300
+    },
+    "configuration": {
+      "model": "gpt-4",
+      "temperature": 0.1,
+      "maxTokens": 3000,
+      "systemPrompt": "You are a code assistant specialized in software development and debugging."
+    },
+    "metrics": {
+      "totalRequests": 892,
+      "averageResponseTime": 1890,
+      "errorRate": 0.01,
+      "uptime": 99.2
+    },
+    "lastSeen": "2025-09-14T20:44:30.000Z"
+  },
+  {
+    "id": "agent-003",
+    "name": "Data Analyst",
+    "description": "AI agent for data analysis and visualization",
+    "status": "offline",
+    "permissions": {
+      "memoryAccess": "admin",
+      "toolAccess": ["analyze-data", "create-chart", "export-csv"],
+      "rateLimitRpm": 60,
+      "maxMemorySize": 800
+    },
+    "configuration": {
+      "model": "gpt-4",
+      "temperature": 0.2,
+      "maxTokens": 3500,
+      "systemPrompt": "You are a data analyst focused on extracting insights from data and creating visualizations."
+    },
+    "metrics": {
+      "totalRequests": 456,
+      "averageResponseTime": 3200,
+      "errorRate": 0.05,
+      "uptime": 94.1
+    },
+    "lastSeen": "2025-09-14T18:30:15.000Z"
+  }
+]
